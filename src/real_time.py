@@ -1,8 +1,10 @@
+# 네이버의 실시간 검색어를 크롤링하여 가져오는 프로그램
+
 import requests
 from bs4 import BeautifulSoup
 
 req = requests.get('https://www.naver.com/')
-source = req.text #req 변수에 저장된 HTML소스를 가져옴
+source = req.text  # req 변수에 저장된 HTML소스를 가져옴
 soup = BeautifulSoup(source, 'html.parser')
 
 top_list = soup.select(
