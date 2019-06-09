@@ -2,6 +2,7 @@
 
 from selenium import webdriver
 
+
 path = "/Applications/chromedriver"
 driver = webdriver.Chrome(path)
 driver.get("https://www.google.com/")
