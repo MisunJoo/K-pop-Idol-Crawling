@@ -27,6 +27,11 @@ class namuwikiCrawling:
 
 
         list_of_idol_group = []
+
+        group_data = []
+        member_data = []
+        profile_results = []
+
         html = get_html('https://namu.wiki/w/%ED%95%9C%EA%B5%AD%20%EC%95%84%EC%9D%B4%EB%8F%8C/%EB%AA%A9%EB%A1%9D')
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -53,49 +58,28 @@ class namuwikiCrawling:
         for idol_group in list_of_idol_group:
 
             print(idol_group)
-            driver.get("https://www.naver.com/")
-            search_box = driver.find_element_by_name("query")
-            search_box.send_keys(idol_group)
-            search_box.submit()
-            driver.implicitly_wait(3)
+            driver.get("https://people.search.naver.com//")
 
+            try :
+                search_box = driver.find_element_by_name("query")
+                search_box.send_keys(idol_group)
+                search_box.submit()
+                driver.implicitly_wait(3)
 
-        driver.close()
+                profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
+                driver.get(profile)
 
-        # # 그룹명의 링크를 타고 들어가, 그룹 사진의 url과 그룹의 탄생일을 저장
-        # driver = webdriver.Chrome("/Applications/chromedriver")
-        # driver.implicitly_wait(3)
-        # driver.get("https://namu.wiki/w/%ED%95%9C%EA%B5%AD%20%EC%95%84%EC%9D%B4%EB%8F%8C/%EB%AA%A9%EB%A1%9D")
-        # group_lists = \
-        #     driver.find_elements_by_css_selector("body > div.content-wrapper > article > div.wiki-content.clearfix > div > div > ul > li > ul > li > div > a.wiki-link-internal")
-        #
-        # for group in group_lists:
-        #     driver.get(group.click())
-        #
-        # print(len(group_lists))
+                try:
+                    group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
 
+                    print(group_image)
+                except:
+                    print("[예외발생]" + idol_group + "이미지 없음")
+                    continue
 
-        #
-        # try {
-        #     WebElement group_lists =
-        #     driver.find_elements_by_css_selector("body > div.content-wrapper > article > div.wiki-content.clearfix > div > div > ul > li > ul > li > div > a.wiki-link-internal")
-        #
-        #     for group in group_lists:
-        #         driver.get(group.get_attribute('href'))
-        #     }
-        # catch(org.openqa.selenium.StaleElementReferenceException ex)
-        # {
-        #     WebElement
-        # date = driver.findElement(By.linkText(Utility.getSheetData(path, 7, 1, 2)));
-        # date.click();
-        # }
-
-        #
-        # for group in group_lists:
-        #     driver.get(group.get_attribute('href'))
-
-
-
+            except:
+                print("[예외발생]" + idol_group + "아이돌 없음")
+                continue
 
 
         # conn.close()
