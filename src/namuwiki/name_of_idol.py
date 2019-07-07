@@ -15,6 +15,50 @@ def get_html(url):
     return html
 
 
+def find_groups_info(driver, conn, curs, list_of_idol_group):
+
+
+    for idol_group in list_of_idol_group:
+
+        print(idol_group)
+        driver.get("https://people.search.naver.com//")
+
+        try:
+            search_box = driver.find_element_by_name("query")
+            search_box.send_keys(idol_group)
+            search_box.submit()
+            driver.implicitly_wait(3)
+
+            profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
+            driver.get(profile)
+
+
+
+
+            try:
+                group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
+                sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+                curs.execute(sql, (idol_group, group_image))
+                conn.commit()
+
+            except:
+                print("[예외발생]" + idol_group + "이미지 없음")
+                sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+                curs.execute(sql, (idol_group, ""))
+                conn.commit()
+                continue
+
+        except:
+            print("[예외발생]" + idol_group + "아이돌 없음")
+            continue
+
+
+    curs.close()
+
+
+# def find_member_info(driver, conn, curs, idol_group):
+
+
 class namuwikiCrawling:
 
     def __init__(self) -> None:
@@ -22,8 +66,8 @@ class namuwikiCrawling:
 
     def start_crawling(self):
 
-        # conn = pymysql.connect(host='localhost', user='root', password='', db='mydb', charset='utf8')
-        # curs = conn.cursor()
+        conn = pymysql.connect(host='localhost', user='root', password='', db='mydb', charset='utf8')
+        curs = conn.cursor()
 
 
         list_of_idol_group = []
@@ -42,44 +86,17 @@ class namuwikiCrawling:
             list_of_idol_group.append(group_name.text)
 
 
-            # sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
-            # curs.execute(sql, (group_name.text, ""))
-            # conn.commit()
+
 
         print(len(group_names))
-
 
         # 그룹명으로 네이버에 검색하여 크롤링
         driver = webdriver.Chrome("/Applications/chromedriver")
         driver.implicitly_wait(3)
 
 
+        find_groups_info(driver,conn, curs, list_of_idol_group)
 
-        for idol_group in list_of_idol_group:
-
-            print(idol_group)
-            driver.get("https://people.search.naver.com//")
-
-            try :
-                search_box = driver.find_element_by_name("query")
-                search_box.send_keys(idol_group)
-                search_box.submit()
-                driver.implicitly_wait(3)
-
-                profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
-                driver.get(profile)
-
-                try:
-                    group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
-
-                    print(group_image)
-                except:
-                    print("[예외발생]" + idol_group + "이미지 없음")
-                    continue
-
-            except:
-                print("[예외발생]" + idol_group + "아이돌 없음")
-                continue
 
 
         # conn.close()
