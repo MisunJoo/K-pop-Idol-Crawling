@@ -16,47 +16,50 @@ def get_html(url):
 
 
 def find_groups_info(driver, conn, curs, list_of_idol_group):
-
-
     for idol_group in list_of_idol_group:
 
         print(idol_group)
         driver.get("https://people.search.naver.com//")
 
-        try:
-            search_box = driver.find_element_by_name("query")
-            search_box.send_keys(idol_group)
-            search_box.submit()
-            driver.implicitly_wait(3)
+        # try:
+        search_box = driver.find_element_by_name("query")
+        search_box.send_keys(idol_group)
+        search_box.submit()
+        driver.implicitly_wait(3)
 
-            profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
-            driver.get(profile)
+        profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
+        driver.get(profile)
 
+        find_member_info(driver, conn, curs, idol_group)
 
+            # try:
+            #     group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
+            #     sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+            #     curs.execute(sql, (idol_group, group_image))
+            #     conn.commit()
+            #
+            # except:
+            #     print("[예외발생]" + idol_group + "이미지 없음")
+            #     sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+            #     curs.execute(sql, (idol_group, ""))
+            #     conn.commit()
+            #     continue
 
-
-            try:
-                group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
-                sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
-                curs.execute(sql, (idol_group, group_image))
-                conn.commit()
-
-            except:
-                print("[예외발생]" + idol_group + "이미지 없음")
-                sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
-                curs.execute(sql, (idol_group, ""))
-                conn.commit()
-                continue
-
-        except:
-            print("[예외발생]" + idol_group + "아이돌 없음")
-            continue
-
-
-    curs.close()
+        # except:
+        #     print("[예외발생]" + idol_group + "아이돌 없음")
+        #     continue
 
 
-# def find_member_info(driver, conn, curs, idol_group):
+def find_member_info(driver, conn, curs, idol_group):
+
+    idol_members = []
+    idol_members_xpath = driver.find_elements_by_xpath('//*[@class="dsc"]/dd/descendant::a')
+
+    for idol_member in idol_members_xpath:
+        idol_members.append(idol_member.get_attribute('href'))
+
+    for idol_member in idol_members:
+        driver.get(idol_member)
 
 
 class namuwikiCrawling:
