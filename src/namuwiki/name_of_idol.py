@@ -1,7 +1,8 @@
 import requests
 import pymysql
 from typing import List
-from bs4 import BeautifulSoup #html을 파싱해주는 라이브러리
+from parse import *
+from bs4 import BeautifulSoup  # html을 파싱해주는 라이브러리
 from selenium import webdriver
 
 
@@ -30,28 +31,29 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
         profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
         driver.get(profile)
 
-        find_member_info(driver, conn, curs, idol_group)
+        try:
+            group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
+            sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+            curs.execute(sql, (idol_group, group_image))
+            conn.commit()
 
-            # try:
-            #     group_image = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
-            #     sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
-            #     curs.execute(sql, (idol_group, group_image))
-            #     conn.commit()
-            #
-            # except:
-            #     print("[예외발생]" + idol_group + "이미지 없음")
-            #     sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
-            #     curs.execute(sql, (idol_group, ""))
-            #     conn.commit()
-            #     continue
+            find_member_info(driver, conn, curs, idol_group)
 
-        # except:
-        #     print("[예외발생]" + idol_group + "아이돌 없음")
-        #     continue
+        except:
+            print("[예외발생]" + idol_group + "이미지 없음")
+            sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
+            curs.execute(sql, (idol_group, ""))
+            conn.commit()
+
+            find_member_info(driver, conn, curs, idol_group)
+            continue
+
+    # except:
+    #     print("[예외발생]" + idol_group + "아이돌 없음")
+    #     continue
 
 
 def find_member_info(driver, conn, curs, idol_group):
-
     idol_members = []
     idol_members_xpath = driver.find_elements_by_xpath('//*[@class="dsc"]/dd/descendant::a')
 
@@ -60,6 +62,16 @@ def find_member_info(driver, conn, curs, idol_group):
 
     for idol_member in idol_members:
         driver.get(idol_member)
+        idol_member_name = driver.find_element_by_xpath('//*[@class="name"]').text
+        try:
+            idol_member_birth_str = driver.find_element_by_xpath('//*[@class="dsc"]/dd').text
+            idol_member_birth_result = parse("{}년 {}월 {}일", idol_member_birth_str)
+            idol_member_birth = idol_member_birth_result[0] + "-" + idol_member_birth_result[1] + "-" + idol_member_birth_result[2]
+            print(idol_member_birth)
+        except:
+            print("[예외발생]" + idol_member_name + "생일 밝히지 않음")
+
+
 
 
 class namuwikiCrawling:
@@ -68,10 +80,8 @@ class namuwikiCrawling:
         super().__init__()
 
     def start_crawling(self):
-
         conn = pymysql.connect(host='localhost', user='root', password='', db='mydb', charset='utf8')
         curs = conn.cursor()
-
 
         list_of_idol_group = []
 
@@ -84,12 +94,10 @@ class namuwikiCrawling:
 
         # 그룹명 모두 크롤링
         group_names = \
-            soup.select("body > div.content-wrapper > article > div.wiki-content.clearfix > div > div > ul > li > ul > li > div > a.wiki-link-internal")
+            soup.select(
+                "body > div.content-wrapper > article > div.wiki-content.clearfix > div > div > ul > li > ul > li > div > a.wiki-link-internal")
         for group_name in group_names:
             list_of_idol_group.append(group_name.text)
-
-
-
 
         print(len(group_names))
 
@@ -97,14 +105,9 @@ class namuwikiCrawling:
         driver = webdriver.Chrome("/Applications/chromedriver")
         driver.implicitly_wait(3)
 
-
-        find_groups_info(driver,conn, curs, list_of_idol_group)
-
-
+        find_groups_info(driver, conn, curs, list_of_idol_group)
 
         # conn.close()
-
-
 
 
 if __name__ == '__main__':
