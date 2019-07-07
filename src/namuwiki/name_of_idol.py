@@ -37,7 +37,12 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
             curs.execute(sql, (idol_group, group_image))
             conn.commit()
 
-            find_member_info(driver, conn, curs, idol_group)
+            sql = "SELECT id FROM celebrity_group WHERE name = %s"
+            curs.execute(sql, (idol_group,))
+            idol_id = curs.fetchone()
+
+            print(idol_id)
+            find_member_info(driver, conn, curs, idol_group, idol_id)
 
         except:
             print("[예외발생]" + idol_group + "이미지 없음")
@@ -45,7 +50,12 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
             curs.execute(sql, (idol_group, ""))
             conn.commit()
 
-            find_member_info(driver, conn, curs, idol_group)
+            sql = "SELECT id FROM celebrity_group WHERE name = %s"
+            curs.execute(sql, (idol_group,))
+            idol_id = curs.fetchone()
+
+            print(idol_id)
+            find_member_info(driver, conn, curs, idol_group, idol_id)
             continue
 
     # except:
@@ -53,12 +63,12 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
     #     continue
 
 
-def find_member_info(driver, conn, curs, idol_group):
+def find_member_info(driver, conn, curs, idol_group, idol_id):
     idol_members = []
-    idol_members_xpath = driver.find_elements_by_xpath('//*[@class="dsc"]/dd/descendant::a')
+    idol_members_xpath = driver.find_elements_by_xpath('//*[@class="dsc"]/dd/*[contains(@href, "people")]')
 
-    for idol_member in idol_members_xpath:
-        idol_members.append(idol_member.get_attribute('href'))
+    for idol_member_path in idol_members_xpath:
+        idol_members.append(idol_member_path.get_attribute('href'))
 
     for idol_member in idol_members:
         driver.get(idol_member)
@@ -67,6 +77,10 @@ def find_member_info(driver, conn, curs, idol_group):
             idol_member_birth_str = driver.find_element_by_xpath('//*[@class="dsc"]/dd').text
             idol_member_birth_result = parse("{}년 {}월 {}일", idol_member_birth_str)
             idol_member_birth = idol_member_birth_result[0] + "-" + idol_member_birth_result[1] + "-" + idol_member_birth_result[2]
+
+
+
+
             print(idol_member_birth)
         except:
             print("[예외발생]" + idol_member_name + "생일 밝히지 않음")
