@@ -116,13 +116,9 @@ def find_member_info(driver, conn, curs, idol_group, idol_id):
                                 idol_member_birth_result[2]
 
 
-
-
             sql = "INSERT INTO celebrity_member (name, birthday, pic_url, group_id) VALUES (%s, %s, %s, %s)"
             curs.execute(sql, (idol_member_name, idol_member_birth, idol_member_pic, idol_id))
             conn.commit()
-
-
 
 
             print(idol_member_birth)
