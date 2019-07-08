@@ -5,6 +5,34 @@ from parse import *
 from bs4 import BeautifulSoup  # html을 파싱해주는 라이브러리
 from selenium import webdriver
 
+def namuwiki_birthday(idol_member_name, driver):
+    if(idol_member_name.find("(")):
+        idol_member_name_result = idol_member_name.split('(')[0]
+    else:
+        idol_member_name_result = idol_member_name
+
+    idol_member_name_result = idol_member_name_result.replace("음력", "")
+
+    driver.get("https://namu.wiki/w/" + idol_member_name_result)
+
+    year_result = driver.find_element_by_xpath(
+        './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "년")]').text
+
+    if 'year_result' in locals():
+        year_parse = parse("{}년", year_result)
+        year = year_parse[0]
+
+        month_day_result = driver.find_element_by_xpath(
+            './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "월")]').text
+        month_day_parse = parse("{}월 {}일", month_day_result)
+        month = month_day_parse[0]
+
+        day = month_day_parse[1]
+
+        birthday = year + "-" + month + "-" + day
+
+    return birthday
+
 
 def get_html(url):
     html = ""
@@ -28,8 +56,6 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
         search_box.submit()
         driver.implicitly_wait(3)
 
-
-
         try:
             profile = driver.find_element_by_xpath('//*[@class="who"]//a').get_attribute('href')
             driver.get(profile)
@@ -45,7 +71,8 @@ def find_groups_info(driver, conn, curs, list_of_idol_group):
             print(idol_id)
             find_member_info(driver, conn, curs, idol_group, idol_id)
 
-        except:
+        except Exception as e:
+            print(e)
             print("[예외발생]" + idol_group + "이미지 없음")
             sql = "INSERT INTO celebrity_group (name, pic_url) VALUES (%s, %s)"
             curs.execute(sql, (idol_group, ""))
@@ -74,13 +101,19 @@ def find_member_info(driver, conn, curs, idol_group, idol_id):
     for idol_member in idol_members:
         driver.get(idol_member)
         idol_member_name = driver.find_element_by_xpath('//*[@class="name"]').text
-
         idol_member_pic = driver.find_element_by_xpath('//*[@class="thmb_img"]').get_attribute('src')
 
+
         try:
-            idol_member_birth_str = driver.find_element_by_xpath('//*[@class="dsc"]/*[contains(text(), "일 ")]').text
+
+            idol_member_birth_str = driver.find_element_by_xpath('//*[@class="dsc"]/*[contains(text(), "일")]').text
+            idol_member_birth_str = idol_member_birth_str.replace("음력", "")
+            sep = ','
+            idol_member_birth_str = idol_member_birth_str.split(sep, 1)[0]
+
             idol_member_birth_result = parse("{}년 {}월 {}일", idol_member_birth_str)
-            idol_member_birth = idol_member_birth_result[0] + "-" + idol_member_birth_result[1] + "-" + idol_member_birth_result[2]
+            idol_member_birth = idol_member_birth_result[0] + "-" + idol_member_birth_result[1] + "-" + \
+                                idol_member_birth_result[2]
 
 
 
@@ -93,10 +126,18 @@ def find_member_info(driver, conn, curs, idol_group, idol_id):
 
 
             print(idol_member_birth)
-        except:
+        except Exception as e:
+            print(e)
             print("[예외발생]" + idol_member_name + "생일 밝히지 않음")
+
+            idol_member_birth = namuwiki_birthday(idol_member_name, driver)
+
             sql = "INSERT INTO celebrity_member (name, birthday, pic_url, group_id) VALUES (%s, %s, %s, %s)"
-            curs.execute(sql, (idol_member_name, "1900-01-01", idol_member_pic, idol_id))
+
+            if 'idol_member_birth' in locals():
+                curs.execute(sql, (idol_member_name, idol_member_birth, idol_member_pic, idol_id))
+            else:
+                curs.execute(sql, (idol_member_name, "1900-01-01", idol_member_pic, idol_id))
             conn.commit()
 
 
