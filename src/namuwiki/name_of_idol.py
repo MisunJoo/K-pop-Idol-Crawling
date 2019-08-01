@@ -15,23 +15,33 @@ def namuwiki_birthday(idol_member_name, driver):
 
     driver.get("https://namu.wiki/w/" + idol_member_name_result)
 
-    year_result = driver.find_element_by_xpath(
-        './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "년")]').text
+    try:
 
-    if 'year_result' in locals():
-        year_parse = parse("{}년", year_result)
-        year = year_parse[0]
+        year_result = driver.find_element_by_xpath(
+            './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "년")]').text
 
-        month_day_result = driver.find_element_by_xpath(
-            './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "월")]').text
-        month_day_parse = parse("{}월 {}일", month_day_result)
-        month = month_day_parse[0]
+        if 'year_result' in locals():
 
-        day = month_day_parse[1]
+            year_parse = parse("{}년", year_result)
+            year = year_parse[0]
 
-        birthday = year + "-" + month + "-" + day
+            month_day_result = driver.find_element_by_xpath(
+                './/tr/td/*[@class="wiki-paragraph"]//*[contains(text(), "출생")]/ancestor::td/following-sibling::td//*[contains(text(), "월")]').text
+            month_day_parse = parse("{}월 {}일", month_day_result)
+            month = month_day_parse[0]
 
-    return birthday
+            day = month_day_parse[1]
+
+            birthday = year + "-" + month + "-" + day
+        return birthday
+
+    except Exception as e:
+            year = str(1900)
+            month = str(10)
+            day = str(10)
+            birthday = year + "-" + month + "-" + day
+
+            return birthday
 
 
 def get_html(url):
@@ -130,11 +140,10 @@ def find_member_info(driver, conn, curs, idol_group, idol_id):
 
             sql = "INSERT INTO celebrity_member (name, birthday, pic_url, group_id) VALUES (%s, %s, %s, %s)"
 
-            if 'idol_member_birth' in locals():
-                curs.execute(sql, (idol_member_name, idol_member_birth, idol_member_pic, idol_id))
-            else:
-                curs.execute(sql, (idol_member_name, "1900-01-01", idol_member_pic, idol_id))
+            curs.execute(sql, (idol_member_name, idol_member_birth, idol_member_pic, idol_id))
+
             conn.commit()
+
 
 
 
